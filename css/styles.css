@@ -1,3 +1,11 @@
 #canvas{
-    border : 1px solid;
+    border : 2px solid #41a0eb;
+    border-radius: 3px;
+    background: #f9f9f9;
+    position: absolute;
+    margin: auto;
+    left: 0px;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
 }

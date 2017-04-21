@@ -17,14 +17,25 @@ function getMousePosition(canvas, evt) {
     };
 }
 function touchePressee(event){
-    
+    // console.log(event.keyCode);
+    if(event.keyCode === 82){
+        jeu.inputStates.r = true;
+    }
     if(event.keyCode === 32){
         jeu.inputStates.space = true;
-        
+    }
+    if(event.keyCode === 65){
+        jeu.inputStates.a = true;
     }
 }
 function toucheRelachee(event){
     if(event.keyCode === 32){
         jeu.inputStates.space = false;
+    }
+    if(event.keyCode === 82){
+        jeu.inputStates.r = false;
+    }
+    if(event.keyCode === 65){
+        jeu.inputStates.a = false;
     }
 }

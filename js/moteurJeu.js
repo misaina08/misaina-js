@@ -2,7 +2,7 @@ window.onload = init;
 let jeu;
 
 function init(){
-    let canvas = document.querySelector("canvas");
+    let canvas = document.querySelector('#canvas');
     jeu = new MoteurJeu(canvas);
     creerEcouteurs();
     jeu.initEtatInitialDuJeu();
@@ -23,9 +23,15 @@ function MoteurJeu(){
     let etatsDuJeu = {
         accueil : 0,
         jeuEnCours : 1,
-        finDuJeu : 2
+        finDuJeu : 2, 
+        aide : 3
     };
     let etatDuJeuEnCours = etatsDuJeu.accueil;
+    
+    // sons :
+    let plopSound = document.getElementById('plop'); 
+    let scoreSound = document.getElementById('sc'); 
+    let gameOverSound = document.getElementById('go'); 
 
     // animation basée sur le temps
     let incX, incY;
@@ -38,13 +44,13 @@ function MoteurJeu(){
     let DUREE_NIVEAU = 8000;
     let niveau = {
         niveau : 1,
-        vitesse : 4,
+        vitesse : 1,
         duree : DUREE_NIVEAU
     }; 
     let dureeNiveauEnCours = niveau.duree;
     let tempsCreationBalle = 1000;
     // points des différentes balles : blanche, rose, rouge
-    let pointsBalles = [100, 60, 40];
+    let pointsBalles = [20, 10, 5];
     
     // touches
     let inputStates = {};
@@ -61,9 +67,11 @@ function MoteurJeu(){
     let typeBallesEnCours = typeBalles.uneBalle;
 
     // liste des couleurs qui succèdent pour les balles
-    let tabCouleurBalle = ['black', 'green', 'red']; 
+    let tabCouleurBalle = ['#0078d7', '#eb8b19', '#eb3219']; 
     
-
+    let bBlue = new Balle(widthCanvas/2, 200, 30, 0, 0, tabCouleurBalle[0],0,0,false);
+    let bJaune = new Balle(130, 200, 30, 1, 0, tabCouleurBalle[1],0,0,false);
+    let bRouge = new Balle(220, 200, 30, -1, 0, tabCouleurBalle[2],0,0,false);
     function initEtatInitialDuJeu(){
         balles.splice(0, balles.length);
         briques.splice(0, briques.length);
@@ -87,21 +95,34 @@ function MoteurJeu(){
                 localStorage.setItem("meilleurScore", 0);
                 meilleurScore = 0;
             }
-            
         } else {
             meilleurScore = score;
         }
-
+        
+        initFPS();
     }
 
     // affichage d'accueil du jeu
     function home(){
         etatDuJeuEnCours = etatsDuJeu.accueil;
-        context.font="20px Georgia";
+        
+        context.fillStyle = '#0078d7';
+        context.font="20px Comic Sans MS";
         context.textAlign="center"; 
-        context.fillText('Accueil', widthCanvas/2, 200);
-        context.fillText('Appuyez sur Espace', widthCanvas/2, 400);
-        context.fillText('Meilleur score : '+score, widthCanvas/2, 350);
+        context.fillText('Appuyez sur "Espace" pour jouer', widthCanvas/2, 400);
+        context.fillText('Aide "A"', widthCanvas/2, 450);
+        context.fillText('Meilleur score : '+meilleurScore, widthCanvas/2, 350);
+        
+        bBlue.draw(context);
+        bJaune.draw(context);
+        bRouge.draw(context);
+        barre.draw(context);
+        bBlue.move();
+        bJaune.move();
+        bRouge.move(); 
+        testeCollisionBalleAvecMurs(bBlue, widthCanvas, heightCanvas);
+        testeCollisionBalleAvecMurs(bJaune, widthCanvas, heightCanvas);
+        testeCollisionBalleAvecMurs(bRouge, widthCanvas, heightCanvas);
     }
 
     // affichage du jeu
@@ -113,23 +134,46 @@ function MoteurJeu(){
 
     // affichage du fin de jeu
     function gameOver(){
-        etatDuJeuEnCours = etatsDuJeu.finDuJeu;
-        context.font="20px Georgia";
-        context.textAlign="center"; 
-        context.fillText('Game over !!!', widthCanvas/2, 300);
-        context.fillText('Score '+scorePrise, widthCanvas/2, 340);
-        context.fillText('Appuyez sur Espace pour reéssayer', widthCanvas/2, 400);     
-
+        context.clearRect(0, 0, widthCanvas, heightCanvas);
+        play(gameOverSound);
         // modifier meilleur score si supérieur
-        if(scorePrise > meilleurScore){
-            meilleurScore = scorePrise;
-            localStorage.setItem("meilleurScore", scorePrise);
-            context.fillText('Nouveau record', widthCanvas/2, 380);
+        if(scorePrise > localStorage.meilleurScore){
+            localStorage.meilleurScore = scorePrise;     
+            
         }
+        etatDuJeuEnCours = etatsDuJeu.finDuJeu;
+        context.font="20px Comic Sans MS";
+        context.textAlign="center"; 
+        context.fillText('Game over !!!', widthCanvas/2, 250);
+        context.fillText('Votre score : '+scorePrise, widthCanvas/2, 300);
+        context.fillText('Reccord : '+localStorage.meilleurScore, widthCanvas/2, 350);   
+        context.fillText('Appuyez sur "Espace" pour réessayer', widthCanvas/2, 400); 
+        context.fillText('Aide "A"', widthCanvas/2, 450);
+        // if(newRec) localStorage.meilleurScore = scorePrise; 
         initEtatInitialDuJeu();
         creerBriques(7, 8);
         
         dessinerBriques();
+    }
+    // affichage de l'aide
+    function aide(){
+        context.clearRect(0, 0, widthCanvas, heightCanvas);
+        
+        context.font="14px Comic Sans MS";
+        context.textAlign="start";     
+        let deb = 50;
+        context.fillText('Le but du jeu est d\'empêcher une balle', 10, deb, widthCanvas-10); 
+        context.fillText('d\'aller à l\'extremité haute', 10, deb+30, widthCanvas-10); 
+        context.fillText('Vous obtenez des points lorsque qu\'une balle arrive', 10, deb+60 , widthCanvas-10); 
+        context.fillText('en bas en fonction du type de la balle :', 10, deb+90 , widthCanvas-10); 
+        context.fillText('  - Balle bleue : 20 points.', 10, deb+120, widthCanvas-10); 
+        context.fillText('  - Balle jaune : 10 points.', 10, deb+150, widthCanvas-10); 
+        context.fillText('  - Balle rouge : 5 points.', 10, deb+180, widthCanvas-10); 
+        context.fillText('Obtenez plus de points en faisant des combos.', 10, deb+210, widthCanvas-10); 
+        context.fillText('Si vous touchez une brique, vous serez puni', 10, deb+240, widthCanvas-10); 
+        context.fillText('et votre score diminuera du point da la balle', 10, deb+270, widthCanvas-10); 
+        context.fillText('Bonne chance :)', 10, deb+310, widthCanvas-10); 
+        context.fillText('Appuyez "R" pour revenir', 10, deb+350, widthCanvas-10); 
     }
     // incrémentation du niveau
     function incrementerNiveau(){
@@ -163,8 +207,9 @@ function MoteurJeu(){
         }
     }
     // le programme principale qui fait tourner le jeu
-    function mainloop(){
+    function mainloop(time){
         // Measure time
+        measureFPS(time);
         now = new Date().getTime();
         // How long between the current frame and the previous one?
         delta = now - then;
@@ -175,28 +220,29 @@ function MoteurJeu(){
         incY = calcDistanceToMove(delta, speedY);
 
         context.clearRect(0, 0, widthCanvas, heightCanvas);
-        context.save();
 
         if(etatDuJeuEnCours == etatsDuJeu.jeuEnCours){
             // affichage de score
             context.textAlign="start";
-            context.font="20px Georgia";
+            context.font="20px Comic Sans MS";
             context.fillText("SCORE : "+score, 5, 25);
             // affichage level
             context.fillText("LEVEL "+niveau.niveau, 250, 25);
         }
         
 
-        // affichage combo
+        // affichage du combo
         if(nbCombo > 0){
-            context.font="20px Georgia";
-            context.fillText("Combo "+nbCombo+" !!!", 5, 400);
+            context.font="20px Comic Sans MS";
+            context.fillText("Combo x"+nbCombo, 5, 400);
         }
         
         if(inputStates.space){
             etatDuJeuEnCours = etatsDuJeu.jeuEnCours;
         }
-       
+        if(inputStates.a) etatDuJeuEnCours = etatsDuJeu.aide;
+        if(inputStates.r) etatDuJeuEnCours = etatsDuJeu.accueil;
+
         switch (etatDuJeuEnCours) {
             case etatsDuJeu.jeuEnCours:
                 // contexte du jeu
@@ -228,10 +274,13 @@ function MoteurJeu(){
             case etatsDuJeu.accueil:
                 home();
                 break;
+            case etatsDuJeu.aide:
+                aide();
+                break;
         }
         // Store time
         then = now;
-        context.restore();
+        
         requestAnimationFrame(mainloop);
     }
      // We want the rectangle to move at a speed given in pixels/second
@@ -263,6 +312,7 @@ function MoteurJeu(){
         balle.rayon = rayonBalle;
         balle.point = pointsBalles[balle.nbRebondBarre];
         balle.dead = false;
+
         balles.push(balle);
     }
     function creerGroupeBalle(cote){
@@ -314,7 +364,10 @@ function MoteurJeu(){
                     // balles.splice([indice], 1);
                     balles[indice].dead = true; 
                     nbCombo += 1;
-                    // continue;
+                    score += nbCombo*pointsBalles[1];
+                    play(scoreSound);
+                    
+                    
                 }
                 // collision avec le mur en haut => game over
                 else if(collisionAuxMurs == 2){
@@ -342,6 +395,7 @@ function MoteurJeu(){
     function testeCollisionBalleAvecBriques(balle, brique, indexBrique, indexBalle){
         // s'il y a une collision entre la balle et la brique
         if(circRectsOverlap(brique.x, brique.y, brique.width, brique.height, balle.x, balle.y, balle.rayon) && !brique.dead && !balle.dead){
+            play(plopSound);
             // on modifie la trajectoire de la balle et la vitesse de la balle
             let newSpeedXBalle =  (balle.x - brique.x);
             let newSpeedYBalle =  (balle.y - brique.y);
@@ -353,6 +407,10 @@ function MoteurJeu(){
             }
             // briques.splice(indexBrique, 1);
             briques[indexBrique].dead = true;
+            // à chaque fois que la balle entre en collision avec une brique, le score diminue en fonction du nb de rebond de la balle et son point
+            score -= balles[indexBalle].point * balles[indexBalle].nbRebondBarre;
+
+            
         }
 
     }
@@ -384,16 +442,17 @@ function MoteurJeu(){
 
 
     function testeCollisionBalleAvecBarre(balle){
-        // à refaire les conditions, il y a des bugs
-        if(((balle.y + balle.rayon) >= barre.y && (balle.y + balle.rayon) <= barre.y +barre.height && (
-        (balle.x + balle.rayon*2) < barre.xMiniBarre || (balle.x > barre.xMiniBarre+barre.widthMiniBarre)))) {
-            balle.vy = -balle.vy;
-            balle.nbRebondBarre +=1;
-            balle.point = pointsBalles[balle.nbRebondBarre];
-            balle.couleur = tabCouleurBalle[balle.nbRebondBarre];
-            nbCombo = 0;
+        if(balle.y+balle.rayon >= barre.y && balle.y+balle.rayon <= barre.y + barre.height){
+            if(!((barre.xMiniBarre<(balle.rayon+balle.x))&&((barre.xMiniBarre+barre.widthMiniBarre)>(balle.x+balle.rayon)))
+            && !balle.dead) {
+                balle.vy = -balle.vy;
+                balle.nbRebondBarre +=1;
+                if(balle.nbRebondBarre > 2) balle.nbRebondBarre= 2 ;
+                balle.point = pointsBalles[balle.nbRebondBarre];
+                balle.couleur = tabCouleurBalle[balle.nbRebondBarre];
+                nbCombo = 0;
+            }
         }
-
     }
 
     return{

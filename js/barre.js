@@ -16,9 +16,10 @@ let barre = {
     },
     draw : function(context){
         context.save();
-        // context.translate(this.x, this.y);
+    
+        context.fillStyle = '#0e213a';
         context.fillRect(this.x, this.y, this.width, this.height);
-        context.fillStyle = 'white';
+        context.fillStyle = '#f9f9f9';
         context.fillRect(this.xMiniBarre, this.y, this.widthMiniBarre, this.height);
         context.restore();
     }

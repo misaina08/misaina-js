@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
-  <title>Mon jeu</title>
+  <title>V 3.0</title>
   <link rel="stylesheet" href="css/styles.css">
   
   <script src="js/moteurJeu.js"></script>
@@ -14,11 +14,26 @@
   <script src="js/collisions.js"></script>
   <script src="js/ecouteurs.js"></script>
   <script src="js/utilitaire.js"></script>
+  <script src="js/sounds.js"></script>
+  <script src="js/fps.js"></script>
+  
+  
 </head>
 <body>
+    <audio id="plop">
+      <source src="assets/audio/plop.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="go">
+      <source src="assets/audio/game_over.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="sc">
+      <source src="assets/audio/score.mp3" type="audio/mpeg">
+    </audio>
     
     <canvas id="canvas" tabindex="1" width="350" height="600">
     </canvas>
+    
+    
  
     <p id="fpsContainer"></p>
   
